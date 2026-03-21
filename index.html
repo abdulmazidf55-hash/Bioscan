@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>BioScan: Interactive Fingerprint Animator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            min-height: 100vh;
+            background: radial-gradient(circle at 20% 30%, #0a0f1e, #03060c);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', 'Poppins', 'Inter', system-ui, -apple-system, 'SF Pro Text', sans-serif;
+            padding: 1.5rem;
+        }
+
+        /* main scanner card */
+        .scanner-container {
+            background: rgba(12, 20, 30, 0.65);
+            backdrop-filter: blur(12px);
+            border-radius: 3rem;
+            padding: 2rem 1.8rem 2.2rem 1.8rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(80, 140, 210, 0.25);
+            width: 100%;
+            max-width: 460px;
+            transition: all 0.2s ease;
+        }
+
+        /* fingerprint visual zone */
+        .fingerprint-area {
+            background: #050b12;
+            border-radius: 2.5rem;
+            padding: 1.8rem 1rem 2rem 1rem;
+            margin-bottom: 2rem;
+            box-shadow: inset 0 5px 12px rgba(0,0,0,0.6), 0 5px 12px rgba(0,20,40,0.3);
+            border: 1px solid rgba(72, 187, 255, 0.3);
+            transition: all 0.2s;
+        }
+
+        .svg-fingerprint {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 1.8rem;
+            position: relative;
+        }
+
+        #fingerSvg {
+            width: 140px;
+            height: 140px;
+            filter: drop-shadow(0 0 6px rgba(0, 200, 255, 0.4));
+            transition: all 0.2s ease;
+        }
+
+        /* scanning line animation */
+        .scan-line {
+            position: relative;
+            margin-top: -10px;
+            height: 4px;
+            width: 80%;
+            margin-left: auto;
+            margin-right: auto;
+            background: linear-gradient(90deg, transparent, #00e0ff, #3a86ff, #00e0ff, transparent);
+            border-radius: 4px;
+            opacity: 0;
+            box-shadow: 0 0 8px #00aaff;
+        }
+
+        .scan-active {
+            animation: scanMove 1.2s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
+            opacity: 1;
+        }
+
+        @keyframes scanMove {
+            0% {
+                transform: translateY(-35px);
+                opacity: 0;
+                width: 50%;
+            }
+            20% {
+                opacity: 1;
+                width: 85%;
+            }
+            80% {
+                opacity: 1;
+                width: 85%;
+            }
+            100% {
+                transform: translateY(55px);
+                opacity: 0;
+                width: 50%;
+            }
+        }
+
+        /* status badge */
+        .status-badge {
+            text-align: center;
+            margin-top: 1rem;
+            font-size: 1.3rem;
+            font-weight: 600;
+            letter-spacing: 1px;
+            background: rgba(0, 0, 0, 0.55);
+            padding: 0.65rem 0.8rem;
+            border-radius: 60px;
+            backdrop-filter: blur(4px);
+            display: inline-block;
+            width: auto;
+            min-width: 170px;
+            margin-left: auto;
+            margin-right: auto;
+            border: 1px solid rgba(255,255,240,0.15);
+        }
+
+        .status-text {
+            background: linear-gradient(135deg, #f0f9ff, #c0e0ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            font-weight: 700;
+            text-shadow: 0 0 5px rgba(0,160,255,0.3);
+        }
+
+        /* message area */
+        .info-message {
+            text-align: center;
+            margin: 1.5rem 0 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #aac8ff;
+            background: rgba(0, 10, 25, 0.6);
+            padding: 0.5rem;
+            border-radius: 40px;
+        }
+
+        /* animated button */
+        .scan-button {
+            background: linear-gradient(105deg, #1e2a3a, #0f1722);
+            border: none;
+            padding: 1rem 0;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #d6edff;
+            border-radius: 70px;
+            width: 100%;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+            letter-spacing: 1px;
+            backdrop-filter: blur(4px);
+            font-family: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .scan-button:active {
+            transform: scale(0.97);
+            box-shadow: 0 3px 8px black;
+        }
+
+        .scan-button:disabled {
+            opacity: 0.6;
+            transform: scale(0.98);
+            cursor: not-allowed;
+            filter: grayscale(0.1);
+        }
+
+        /* ripple effect container */
+        .ripple-effect {
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* fingerprint glow animation for success/fail/notfound */
+        .glow-success {
+            animation: pulseGlow 0.6s ease-in-out 3, successShake 0.2s ease 2;
+        }
+
+        .glow-failed {
+            animation: pulseRed 0.5s ease-in-out 3, failShake 0.15s ease 3;
+        }
+
+        .glow-notfound {
+            animation: pulseAmber 0.6s ease-in-out 2, wobble 0.3s ease;
+        }
+
+        @keyframes pulseGlow {
+            0% { filter: drop-shadow(0 0 0px #2eff9e); }
+            50% { filter: drop-shadow(0 0 18px #2eff9e) drop-shadow(0 0 8px #00cc66); }
+            100% { filter: drop-shadow(0 0 0px #2eff9e); }
+        }
+
+        @keyframes pulseRed {
+            0% { filter: drop-shadow(0 0 0px #ff4d4d); }
+            50% { filter: drop-shadow(0 0 18px #ff3b3b) drop-shadow(0 0 6px #ff0000); }
+            100% { filter: drop-shadow(0 0 0px #ff4d4d); }
+        }
+
+        @keyframes pulseAmber {
+            0% { filter: drop-shadow(0 0 0px #ffaa33); }
+            50% { filter: drop-shadow(0 0 18px #ffaa33) drop-shadow(0 0 8px #ff8800); }
+            100% { filter: drop-shadow(0 0 0px #ffaa33); }
+        }
+
+        @keyframes successShake {
+            0%,100% { transform: translateX(0); }
+            25% { transform: translateX(-2px); }
+            75% { transform: translateX(2px); }
+        }
+
+        @keyframes failShake {
+            0% { transform: translateX(0px); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        @keyframes wobble {
+            0%,100% { transform: rotate(0deg); }
+            25% { transform: rotate(3deg); }
+            75% { transform: rotate(-3deg); }
+        }
+
+        /* fingerprint scanning circles (mobile like) */
+        .scanning-pulse-ring {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,200,255,0.15) 0%, rgba(0,100,200,0) 80%);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+            z-index: 2;
+            opacity: 0;
+        }
+
+        .ring-active {
+            animation: ringExpand 0.9s ease-out forwards;
+        }
+
+        @keyframes ringExpand {
+            0% {
+                opacity: 0.6;
+                width: 120px;
+                height: 120px;
+                background: radial-gradient(circle, rgba(0,200,255,0.5) 0%, rgba(0,160,255,0) 70%);
+            }
+            100% {
+                opacity: 0;
+                width: 210px;
+                height: 210px;
+                background: radial-gradient(circle, rgba(0,255,200,0.2) 0%, rgba(0,200,255,0) 90%);
+            }
+        }
+
+        .relative {
+            position: relative;
+        }
+
+        .counter-badge {
+            font-size: 0.75rem;
+            background: #111c28;
+            border-radius: 40px;
+            padding: 0.2rem 0.8rem;
+            text-align: center;
+            width: fit-content;
+            margin: 0.8rem auto 0;
+            color: #9ac7ff;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 1.5rem;
+            opacity: 0.6;
+            color: #88aadd;
+        }
+
+        @media (max-width: 500px) {
+            .scanner-container {
+                padding: 1.5rem;
+            }
+            #fingerSvg {
+                width: 110px;
+                height: 110px;
+            }
+            .status-badge {
+                font-size: 1rem;
+            }
+            .scan-button {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="scanner-container">
+    <div class="fingerprint-area">
+        <div class="svg-fingerprint relative" id="fingerWrapper">
+            <div id="ringEffect" class="scanning-pulse-ring"></div>
+            <!-- SVG Fingerprint icon with fine details -->
+            <svg id="fingerSvg" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g id="fingerprint-glow">
+                    <path d="M60,20 C42.5,20 28,34.5 28,52 L28,68 C28,78 35,86 45,88 L45,78 C38.5,76.5 34,70.5 34,64 L34,52 C34,38.5 44.5,28 58,28 C71.5,28 82,38.5 82,52 L82,68 C82,77 74,84 65,84 C60.5,84 57,80.5 57,76 L57,56 C57,54 58.5,52.5 60.5,52.5 C62.5,52.5 64,54 64,56 L64,76 C64,78 66,80 68,80 C74,80 79,74.5 79,68 L79,52 C79,41.5 70.5,33 60,33 C49.5,33 41,41.5 41,52 L41,64 C41,70 46,75 52,76 L52,86 C42,84 34,75 34,64 L34,52 C34,37 44.5,26 60,26 C75.5,26 86,37 86,52 L86,68 C86,80.5 75.5,92 62,92 C53.5,92 46.5,86.5 44,78.5 L44,70 C46,74 52,78 58,78 C67,78 74,70 74,61 L74,52 C74,44.5 67.5,38 60,38 C52.5,38 46,44.5 46,52 L46,62 C46,67 49,72 54,74 L54,84 C48,82 42,75.5 42,68 L42,52 C42,42 50,34 60,34 C70,34 78,42 78,52 L78,62 C78,70 71.5,77 64,77 C60,77 57,74 57,70 L57,56 C57,54.5 58,53 60,53 C62,53 63,54.5 63,56 L63,70 C63,73 66,75 69,75 C74,75 78,71 78,66 L78,52 C78,44.5 71.5,38 64,38 C57,38 51,44 51,51 L51,63 C51,66 53.5,69 56.5,69 C58,69 59,68 59,66.5 L59,56" stroke="url(#gradStroke)" stroke-width="2.5" stroke-linecap="round" fill="url(#fingerGrad)" fill-opacity="0.85"/>
+                    <defs>
+                        <linearGradient id="gradStroke" x1="20" y1="20" x2="100" y2="100" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#4affff"/>
+                            <stop offset="1" stop-color="#2a7fff"/>
+                        </linearGradient>
+                        <radialGradient id="fingerGrad" cx="60" cy="60" r="40" gradientUnits="userSpaceOnUse">
+                            <stop stop-color="#b9e6ff"/>
+                            <stop offset="1" stop-color="#7fb0e0"/>
+                        </radialGradient>
+                    </defs>
+                </g>
+            </svg>
+            <div class="scan-line" id="scanLine"></div>
+        </div>
+
+        <div class="status-badge">
+            <span id="statusLabel" class="status-text">⚡ READY ⚡</span>
+        </div>
+        <div class="info-message" id="infoMsg">
+            👆 Tap START to simulate fingerprint scan
+        </div>
+        <div class="counter-badge" id="cycleCounter">
+            🔄 cycle: waiting...
+        </div>
+    </div>
+
+    <button id="scanBtn" class="scan-button ripple-effect">
+        <span>🔘 START SCAN</span>
+    </button>
+    <footer>animated biometric • scan feedback loop</footer>
+</div>
+
+<script>
+    // ---------- STATE MACHINE ----------
+    // According to requirement:
+    // "start e click korle scanning lekha uthbe protibar success ashbe 3 bar success hole abar start e click korle failed ashbe abar click korle success 3 bar ashbe 3 barer por ashbe not found erpor abar start dile ashbe success"
+    // interpretation:
+    // PHASE 1: after first start sequence -> returns "SUCCESS" for first 3 consecutive scans (each click shows success)
+    // After 3 success, next click triggers "FAILED"
+    // After that failed, next click triggers "SUCCESS" three times again (3 success in row)
+    // After those 3 success, then next click gives "NOT FOUND"
+    // Then after not found, next click loops back to "SUCCESS" and repeats pattern: 3x success → failed → 3x success → not found → 3x success ... etc.
+    // Additional nuance: each click shows scanning animation + scanning text + result.
+
+    // We'll define a cycle manager that tracks state sequence.
+    // Let's store:
+    // currentMode: can be 'SUCCESS_MULTI', 'FAILED_SINGLE', 'NOTFOUND_SINGLE'
+    // But the pattern: SUCCESS repeated 3 times -> then FAIL -> then SUCCESS 3 times -> then NOT_FOUND -> repeat.
+    // So we can implement a linear step index.
+    
+    let currentStepIndex = 0;          // 0-based index in the sequence array
+    let successCounter = 0;             // special handling for consecutive success steps
+    // but easier: define a master sequence that repeats:
+    // [ 'success', 'success', 'success', 'failed', 'success', 'success', 'success', 'notfound' ]
+    // then loop forever.
+    const masterSequence = [
+        "success", "success", "success",
+        "failed",
+        "success", "success", "success",
+        "notfound"
+    ];
+    
+    // But the requirement says: after NOT FOUND, again start -> success cycle 3 times again.
+    // So masterSequence is perfect cycle length 8. We'll just increment index on each valid scan (after click and animation done)
+    
+    let isScanning = false;          // prevent multiple clicks during animation
+    let timeoutId = null;
+    
+    // UI Elements
+    const scanBtn = document.getElementById("scanBtn");
+    const statusSpan = document.getElementById("statusLabel");
+    const infoMsgDiv = document.getElementById("infoMsg");
+    const cycleCounterSpan = document.getElementById("cycleCounter");
+    const fingerSvg = document.getElementById("fingerSvg");
+    const scanLine = document.getElementById("scanLine");
+    const ringEffect = document.getElementById("ringEffect");
+    
+    // Helper: clear ongoing timeouts
+    function abortAnimation() {
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+            timeoutId = null;
+        }
+    }
+    
+    // remove all glow classes
+    function removeAllGlowClasses() {
+        fingerSvg.classList.remove("glow-success", "glow-failed", "glow-notfound");
+    }
+    
+    // stop scanning line animation
+    function stopScanLine() {
+        scanLine.classList.remove("scan-active");
+    }
+    
+    function startScanLine() {
+        scanLine.classList.add("scan-active");
+    }
+    
+    // add ring ripple effect
+    function triggerRippleRing() {
+        ringEffect.classList.remove("ring-active");
+        // force reflow
+        void ringEffect.offsetWidth;
+        ringEffect.classList.add("ring-active");
+        setTimeout(() => {
+            ringEffect.classList.remove("ring-active");
+        }, 800);
+    }
+    
+    // simulate fingerprint scan result based on current masterSequence index
+    function getCurrentResult() {
+        return masterSequence[currentStepIndex % masterSequence.length];
+    }
+    
+    // update UI counter indicator
+    function updateCycleDisplay() {
+        const seqLen = masterSequence.length;
+        const pos = currentStepIndex % seqLen;
+        let nextType = masterSequence[pos];
+        let emoji = "";
+        if (nextType === "success") emoji = "✅";
+        else if (nextType === "failed") emoji = "❌";
+        else emoji = "🔍";
+        cycleCounterSpan.innerHTML = `🔄 next: ${nextType.toUpperCase()} ${emoji}  (step ${pos+1}/${seqLen})`;
+    }
+    
+    // advance state after a completed scan result
+    function advanceToNextState() {
+        currentStepIndex++;
+        updateCycleDisplay();
+    }
+    
+    // main scan simulation (triggers scanning animation, then shows result)
+    function performScan() {
+        if (isScanning) {
+            // just in case double click guard
+            return;
+        }
+        
+        isScanning = true;
+        scanBtn.disabled = true;
+        
+        // reset any previous glow and stop ongoing line
+        abortAnimation();
+        removeAllGlowClasses();
+        stopScanLine();
+        
+        // ---- 1. Show "SCANNING..." animation effect (mobile like fingerprint read)
+        statusSpan.innerHTML = "🔍 SCANNING...";
+        infoMsgDiv.innerHTML = "📱 Place finger on sensor • analyzing ridge pattern";
+        // start scanning line animation + ripple
+        startScanLine();
+        triggerRippleRing();
+        
+        // additional subtle pulse on svg while scanning
+        fingerSvg.style.filter = "drop-shadow(0 0 8px #00ccff)";
+        
+        // get result after scanning delay
+        timeoutId = setTimeout(() => {
+            // scanning finished
+            stopScanLine();
+            fingerSvg.style.filter = "";
+            
+            // get current result from sequence (before advancing)
+            const result = getCurrentResult();
+            
+            // ---- 2. Display result and animate fingerprint accordingly
+            let statusMessage = "";
+            let glowClass = "";
+            let infoText = "";
+            
+            if (result === "success") {
+                statusMessage = "✅ SUCCESS ✅";
+                glowClass = "glow-success";
+                infoText = "✔️ Fingerprint matched! Access granted.";
+            } else if (result === "failed") {
+                statusMessage = "❌ FAILED ❌";
+                glowClass = "glow-failed";
+                infoText = "⚠️ Authentication failed. Try again.";
+            } else if (result === "notfound") {
+                statusMessage = "🔍 NOT FOUND 🔍";
+                glowClass = "glow-notfound";
+                infoText = "❓ Fingerprint not registered in database.";
+            }
+            
+            // apply glow & animation class
+            fingerSvg.classList.add(glowClass);
+            statusSpan.innerHTML = statusMessage;
+            infoMsgDiv.innerHTML = infoText;
+            
+            // Also trigger a subtle ring for result
+            triggerRippleRing();
+            
+            // after result shown, advance state for next click
+            advanceToNextState();
+            
+            // Remove glow after animation ends
+            setTimeout(() => {
+                fingerSvg.classList.remove(glowClass);
+            }, 800);
+            
+            // after delay, re-enable button
+            timeoutId = setTimeout(() => {
+                isScanning = false;
+                scanBtn.disabled = false;
+                // if not scanning, set ready status but preserve last result message until next action? better set idle hint.
+                if (!isScanning) {
+                    // but we keep last result visible, but change info message to prompt
+                    infoMsgDiv.innerHTML = "✨ Tap START to perform next fingerprint scan ✨";
+                }
+                timeoutId = null;
+            }, 700);
+            
+        }, 1100); // scanning effect duration 1.1 sec
+    }
+    
+    // reset any pending on click start
+    function onStartClick() {
+        if (isScanning) return;
+        performScan();
+    }
+    
+    // initial UI update
+    function initUI() {
+        currentStepIndex = 0;
+        updateCycleDisplay();
+        statusSpan.innerHTML = "⚡ READY ⚡";
+        infoMsgDiv.innerHTML = "👆 Tap START to simulate fingerprint scanner (mobile style)";
+        removeAllGlowClasses();
+        stopScanLine();
+        fingerSvg.style.filter = "";
+        isScanning = false;
+        scanBtn.disabled = false;
+        if (timeoutId) clearTimeout(timeoutId);
+    }
+    
+    // attach event
+    scanBtn.addEventListener("click", onStartClick);
+    
+    // also add optional ripple effect on button click (extra)
+    scanBtn.addEventListener("mousedown", function(e) {
+        if (!isScanning) {
+            // tiny visual feedback
+            this.style.transform = "scale(0.97)";
+            setTimeout(() => { if(scanBtn) scanBtn.style.transform = ""; }, 120);
+        }
+    });
+    
+    initUI();
+    
+    // extra: simulate clean animation if window load
+    window.addEventListener("load", () => {
+        // small idle pulse to show fingerprint is ready
+        setInterval(() => {
+            if (!isScanning && document.hasFocus()) {
+                // subtle breathing effect for fingerprint icon (optional)
+                fingerSvg.style.transition = "filter 0.3s";
+                fingerSvg.style.filter = "drop-shadow(0 0 2px rgba(0,180,255,0.5))";
+                setTimeout(() => {
+                    if(!isScanning) fingerSvg.style.filter = "";
+                }, 400);
+            }
+        }, 3000);
+    });
+    
+    // ensure status messages are fully compatible with described cycle:
+    // Description check: "start e click korle scanning lekha uthbe protibar success ashbe 3 bar success hole abar start e click korle failed ashbe abar click korle success 3 bar ashbe 3 barer por ashbe not found erpor abar start dile ashbe success"
+    // our master sequence: 
+    // index0:success (click1)
+    // index1:success (click2)
+    // index2:success (click3)
+    // index3:failed (click4)
+    // index4:success (click5)
+    // index5:success (click6)
+    // index6:success (click7)
+    // index7:notfound (click8)
+    // index8: success (click9) -> loops perfectly.
+    // 3 success -> failed -> 3 success -> not found -> repeat => matches requirement exactly.
+    // Additionally, each scan shows "SCANNING..." text and line animation + mobile-like expanding ring.
+    // UI fully animated with modern glassmorphism.
+    
+    // extra: ensure on each click scanning text always appears.
+    // Also supports mobile touch events.
+</script>
+</body>
+</html>
