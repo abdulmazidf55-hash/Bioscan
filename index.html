@@ -3,598 +3,513 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>BioScan Pro | Hidden Next Result</title>
+    <title>NexusCore | Network Velocity Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             user-select: none;
-            -webkit-tap-highlight-color: transparent;
+        }
+
+        :root {
+            --bg-primary: #03060c;
+            --bg-secondary: #07120e;
+            --card-bg: rgba(6, 18, 12, 0.85);
+            --accent-green: #0aff8c;
+            --accent-cyan: #00d4ff;
+            --accent-orange: #ff6a2e;
+            --accent-red: #ff3366;
+            --accent-purple: #b266ff;
+            --glow-intensity: 0px;
         }
 
         body {
             min-height: 100vh;
-            background: radial-gradient(circle at 20% 30%, #0a0f1e, #03060c);
+            background: linear-gradient(135deg, #03060c 0%, #0a1912 50%, #030a06 100%);
+            font-family: 'Space Grotesk', monospace;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: 'Segoe UI', 'Poppins', 'Inter', system-ui, -apple-system, 'SF Pro Text', sans-serif;
             padding: 1.5rem;
+            position: relative;
+            overflow-x: hidden;
         }
 
-        /* main scanner card */
-        .scanner-container {
-            background: rgba(12, 20, 30, 0.65);
-            backdrop-filter: blur(12px);
-            border-radius: 3rem;
-            padding: 2rem 1.8rem 2.2rem 1.8rem;
-            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(80, 140, 210, 0.25);
+        /* Particle Canvas Background */
+        #particleCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
             width: 100%;
-            max-width: 460px;
-            transition: all 0.2s ease;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.4;
         }
 
-        /* fingerprint visual zone */
-        .fingerprint-area {
-            background: #050b12;
+        /* Main Dashboard */
+        .dashboard {
+            position: relative;
+            z-index: 2;
+            max-width: 800px;
+            width: 100%;
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
             border-radius: 2.5rem;
-            padding: 1.8rem 1rem 2rem 1rem;
-            margin-bottom: 2rem;
-            box-shadow: inset 0 5px 12px rgba(0,0,0,0.6), 0 5px 12px rgba(0,20,40,0.3);
-            border: 1px solid rgba(72, 187, 255, 0.3);
-            transition: all 0.2s;
+            border: 1px solid rgba(10, 255, 140, 0.25);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            transition: all 0.3s ease;
         }
 
-        .svg-fingerprint {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-bottom: 1.8rem;
-            position: relative;
-        }
-
-        #fingerSvg {
-            width: 140px;
-            height: 140px;
-            filter: drop-shadow(0 0 6px rgba(0, 200, 255, 0.4));
-            transition: all 0.2s ease;
-        }
-
-        /* scanning line animation */
-        .scan-line {
-            position: relative;
-            margin-top: -10px;
-            height: 4px;
-            width: 80%;
-            margin-left: auto;
-            margin-right: auto;
-            background: linear-gradient(90deg, transparent, #00e0ff, #3a86ff, #00e0ff, transparent);
-            border-radius: 4px;
-            opacity: 0;
-            box-shadow: 0 0 8px #00aaff;
-        }
-
-        .scan-active {
-            animation: scanMove 1.2s cubic-bezier(0.4, 0.0, 0.2, 1) infinite;
-            opacity: 1;
-        }
-
-        @keyframes scanMove {
-            0% {
-                transform: translateY(-35px);
-                opacity: 0;
-                width: 50%;
-            }
-            20% {
-                opacity: 1;
-                width: 85%;
-            }
-            80% {
-                opacity: 1;
-                width: 85%;
-            }
-            100% {
-                transform: translateY(55px);
-                opacity: 0;
-                width: 50%;
-            }
-        }
-
-        /* status badge */
-        .status-badge {
+        /* Header Section */
+        .network-header {
+            padding: 2rem 2rem 1rem;
             text-align: center;
-            margin-top: 1rem;
-            font-size: 1.3rem;
-            font-weight: 600;
-            letter-spacing: 1px;
-            background: rgba(0, 0, 0, 0.55);
-            padding: 0.65rem 0.8rem;
-            border-radius: 60px;
-            backdrop-filter: blur(4px);
-            display: inline-block;
-            width: auto;
-            min-width: 170px;
-            margin-left: auto;
-            margin-right: auto;
-            border: 1px solid rgba(255,255,240,0.15);
+            border-bottom: 1px solid rgba(10, 255, 140, 0.2);
         }
 
-        .status-text {
-            background: linear-gradient(135deg, #f0f9ff, #c0e0ff);
+        .tier-badge {
+            display: inline-block;
+            padding: 0.5rem 1.2rem;
+            background: rgba(10, 255, 140, 0.1);
+            border-radius: 60px;
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            color: var(--accent-green);
+            border: 1px solid rgba(10, 255, 140, 0.3);
+            margin-bottom: 1rem;
+        }
+
+        .network-name {
+            font-size: 3rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #fff, var(--accent-green));
             background-clip: text;
             -webkit-background-clip: text;
             color: transparent;
-            font-weight: 700;
-            text-shadow: 0 0 5px rgba(0,160,255,0.3);
+            letter-spacing: -0.02em;
+            margin-bottom: 0.5rem;
         }
 
-        /* message area */
-        .info-message {
-            text-align: center;
-            margin: 1.5rem 0 1rem;
-            font-size: 1rem;
+        .speed-display {
+            font-size: 1.2rem;
+            color: #8bc34a;
+            opacity: 0.9;
             font-weight: 500;
-            color: #aac8ff;
-            background: rgba(0, 10, 25, 0.6);
-            padding: 0.5rem;
-            border-radius: 40px;
         }
 
-        /* animated button */
-        .scan-button {
-            background: linear-gradient(105deg, #1e2a3a, #0f1722);
-            border: none;
-            padding: 1rem 0;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #d6edff;
-            border-radius: 70px;
+        /* Network Animation Zone */
+        .animation-zone {
+            padding: 2rem;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #networkCanvas {
             width: 100%;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
-            letter-spacing: 1px;
+            height: 280px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 1.5rem;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(10, 255, 140, 0.2);
+            margin-bottom: 1.5rem;
+        }
+
+        /* Status Cards */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .status-card {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 1rem;
+            padding: 0.8rem;
+            text-align: center;
+            border: 1px solid rgba(10, 255, 140, 0.2);
             backdrop-filter: blur(4px);
-            font-family: inherit;
+        }
+
+        .status-label {
+            font-size: 0.7rem;
+            color: #6c8b74;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .status-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-green);
+            margin-top: 0.3rem;
+        }
+
+        /* Live Indicator */
+        .live-indicator {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-        }
-
-        .scan-button:active {
-            transform: scale(0.97);
-            box-shadow: 0 3px 8px black;
-        }
-
-        .scan-button:disabled {
-            opacity: 0.6;
-            transform: scale(0.98);
-            cursor: not-allowed;
-            filter: grayscale(0.1);
-        }
-
-        /* fingerprint glow animation for success/fail/notfound */
-        .glow-success {
-            animation: pulseGlow 0.6s ease-in-out 3, successShake 0.2s ease 2;
-        }
-
-        .glow-failed {
-            animation: pulseRed 0.5s ease-in-out 3, failShake 0.15s ease 3;
-        }
-
-        .glow-notfound {
-            animation: pulseAmber 0.6s ease-in-out 2, wobble 0.3s ease;
-        }
-
-        @keyframes pulseGlow {
-            0% { filter: drop-shadow(0 0 0px #2eff9e); }
-            50% { filter: drop-shadow(0 0 18px #2eff9e) drop-shadow(0 0 8px #00cc66); }
-            100% { filter: drop-shadow(0 0 0px #2eff9e); }
-        }
-
-        @keyframes pulseRed {
-            0% { filter: drop-shadow(0 0 0px #ff4d4d); }
-            50% { filter: drop-shadow(0 0 18px #ff3b3b) drop-shadow(0 0 6px #ff0000); }
-            100% { filter: drop-shadow(0 0 0px #ff4d4d); }
-        }
-
-        @keyframes pulseAmber {
-            0% { filter: drop-shadow(0 0 0px #ffaa33); }
-            50% { filter: drop-shadow(0 0 18px #ffaa33) drop-shadow(0 0 8px #ff8800); }
-            100% { filter: drop-shadow(0 0 0px #ffaa33); }
-        }
-
-        @keyframes successShake {
-            0%,100% { transform: translateX(0); }
-            25% { transform: translateX(-2px); }
-            75% { transform: translateX(2px); }
-        }
-
-        @keyframes failShake {
-            0% { transform: translateX(0px); }
-            25% { transform: translateX(-4px); }
-            75% { transform: translateX(4px); }
-        }
-
-        @keyframes wobble {
-            0%,100% { transform: rotate(0deg); }
-            25% { transform: rotate(3deg); }
-            75% { transform: rotate(-3deg); }
-        }
-
-        /* scanning pulse ring (mobile like) */
-        .scanning-pulse-ring {
-            position: absolute;
-            width: 160px;
-            height: 160px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(0,200,255,0.15) 0%, rgba(0,100,200,0) 80%);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            pointer-events: none;
-            z-index: 2;
-            opacity: 0;
-        }
-
-        .ring-active {
-            animation: ringExpand 0.9s ease-out forwards;
-        }
-
-        @keyframes ringExpand {
-            0% {
-                opacity: 0.6;
-                width: 120px;
-                height: 120px;
-                background: radial-gradient(circle, rgba(0,200,255,0.5) 0%, rgba(0,160,255,0) 70%);
-            }
-            100% {
-                opacity: 0;
-                width: 210px;
-                height: 210px;
-                background: radial-gradient(circle, rgba(0,255,200,0.2) 0%, rgba(0,200,255,0) 90%);
-            }
-        }
-
-        .relative {
-            position: relative;
-        }
-
-        /* NEXT RESULT INDICATOR - NOW HIDDEN COMPLETELY */
-        .next-result-container {
-            margin: 0.8rem auto 0;
-            text-align: center;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 40px;
-            padding: 0.2rem 0.5rem;
-            width: fit-content;
-            margin-left: auto;
-            margin-right: auto;
-            /* HIDDEN: no one can see next result */
-            opacity: 0;
-            visibility: hidden;
-            display: none;
-        }
-        
-        /* counter badge is also hidden to maintain mystery */
-        .counter-badge {
-            display: none;
-            visibility: hidden;
-        }
-        
-        /* tiny debug class removed - next result fully hidden */
-        .hidden-next {
-            display: none !important;
-        }
-        
-        /* subtle hint but no actual next value shown */
-        .info-hint {
-            font-size: 0.7rem;
-            text-align: center;
-            margin-top: 0.5rem;
-            color: #3a5a7a;
-            letter-spacing: 0.5px;
-        }
-
-        footer {
-            font-size: 0.7rem;
-            text-align: center;
+            gap: 0.8rem;
             margin-top: 1.5rem;
-            opacity: 0.6;
-            color: #88aadd;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(10, 255, 140, 0.2);
         }
-        
-        @media (max-width: 500px) {
-            .scanner-container {
-                padding: 1.5rem;
-            }
-            #fingerSvg {
-                width: 110px;
-                height: 110px;
-            }
-            .status-badge {
-                font-size: 1rem;
-            }
-            .scan-button {
-                font-size: 1.2rem;
-            }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--accent-green);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-green);
+            animation: pulse 1.2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 0.4; transform: scale(0.8); }
+            50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        .timestamp {
+            font-size: 0.7rem;
+            color: #5a7a62;
+            font-family: monospace;
+        }
+
+        /* Footer */
+        .footer-note {
+            padding: 1rem 2rem;
+            text-align: center;
+            font-size: 0.65rem;
+            color: #3a5a4a;
+            border-top: 1px solid rgba(10, 255, 140, 0.1);
+        }
+
+        @media (max-width: 600px) {
+            .dashboard { margin: 0; }
+            .network-name { font-size: 2rem; }
+            .status-grid { gap: 0.5rem; }
+            .animation-zone { padding: 1rem; }
+            #networkCanvas { height: 200px; }
+        }
+
+        /* Network Tier Animations */
+        @keyframes dataStream {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
         }
     </style>
 </head>
 <body>
-
-<div class="scanner-container">
-    <div class="fingerprint-area">
-        <div class="svg-fingerprint relative" id="fingerWrapper">
-            <div id="ringEffect" class="scanning-pulse-ring"></div>
-            <!-- SVG Fingerprint icon with detailed ridges -->
-            <svg id="fingerSvg" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <g id="fingerprint-glow">
-                    <path d="M60,20 C42.5,20 28,34.5 28,52 L28,68 C28,78 35,86 45,88 L45,78 C38.5,76.5 34,70.5 34,64 L34,52 C34,38.5 44.5,28 58,28 C71.5,28 82,38.5 82,52 L82,68 C82,77 74,84 65,84 C60.5,84 57,80.5 57,76 L57,56 C57,54 58.5,52.5 60.5,52.5 C62.5,52.5 64,54 64,56 L64,76 C64,78 66,80 68,80 C74,80 79,74.5 79,68 L79,52 C79,41.5 70.5,33 60,33 C49.5,33 41,41.5 41,52 L41,64 C41,70 46,75 52,76 L52,86 C42,84 34,75 34,64 L34,52 C34,37 44.5,26 60,26 C75.5,26 86,37 86,52 L86,68 C86,80.5 75.5,92 62,92 C53.5,92 46.5,86.5 44,78.5 L44,70 C46,74 52,78 58,78 C67,78 74,70 74,61 L74,52 C74,44.5 67.5,38 60,38 C52.5,38 46,44.5 46,52 L46,62 C46,67 49,72 54,74 L54,84 C48,82 42,75.5 42,68 L42,52 C42,42 50,34 60,34 C70,34 78,42 78,52 L78,62 C78,70 71.5,77 64,77 C60,77 57,74 57,70 L57,56 C57,54.5 58,53 60,53 C62,53 63,54.5 63,56 L63,70 C63,73 66,75 69,75 C74,75 78,71 78,66 L78,52 C78,44.5 71.5,38 64,38 C57,38 51,44 51,51 L51,63 C51,66 53.5,69 56.5,69 C58,69 59,68 59,66.5 L59,56" stroke="url(#gradStroke)" stroke-width="2.5" stroke-linecap="round" fill="url(#fingerGrad)" fill-opacity="0.85"/>
-                    <defs>
-                        <linearGradient id="gradStroke" x1="20" y1="20" x2="100" y2="100" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#4affff"/>
-                            <stop offset="1" stop-color="#2a7fff"/>
-                        </linearGradient>
-                        <radialGradient id="fingerGrad" cx="60" cy="60" r="40" gradientUnits="userSpaceOnUse">
-                            <stop stop-color="#b9e6ff"/>
-                            <stop offset="1" stop-color="#7fb0e0"/>
-                        </radialGradient>
-                    </defs>
-                </g>
-            </svg>
-            <div class="scan-line" id="scanLine"></div>
+    <canvas id="particleCanvas"></canvas>
+    <div class="dashboard">
+        <div class="network-header">
+            <div class="tier-badge" id="tierBadge">⚡ ACTIVE NETWORK</div>
+            <div class="network-name" id="networkName">3.5G</div>
+            <div class="speed-display" id="speedDisplay">~42 Mbps • STANDARD</div>
         </div>
 
-        <div class="status-badge">
-            <span id="statusLabel" class="status-text">⚡ READY ⚡</span>
+        <div class="animation-zone">
+            <canvas id="networkCanvas" width="700" height="280"></canvas>
+            <div class="status-grid">
+                <div class="status-card">
+                    <div class="status-label">LATENCY</div>
+                    <div class="status-value" id="latencyValue">42ms</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-label">BANDWIDTH</div>
+                    <div class="status-value" id="bandwidthValue">42 Mbps</div>
+                </div>
+                <div class="status-card">
+                    <div class="status-label">SIGNAL</div>
+                    <div class="status-value" id="signalValue">████▁▁</div>
+                </div>
+            </div>
+            <div class="live-indicator">
+                <div class="pulse-dot"></div>
+                <span style="color: #8bc34a;">LIVE SYNC • REAL-TIME NETWORK</span>
+                <span class="timestamp" id="timestamp">--:--:--</span>
+            </div>
         </div>
-        <div class="info-message" id="infoMsg">
-            👆 Tap START to simulate fingerprint scan
+        <div class="footer-note">
+            🔥 Network visualization scales with speed • Powered by Firebase Realtime
         </div>
-        
-        <!-- NEXT RESULT AREA COMPLETELY HIDDEN - user cannot see what's coming next -->
-        <div class="next-result-container hidden-next" id="nextResultHidden">
-            <span id="nextLabel"></span>
-        </div>
-        
-        <!-- counter badge removed from UI - no hint about cycle -->
-        <div class="counter-badge" style="display: none;"></div>
-        <div class="info-hint">🔒 secure biometric simulation • result unpredictable</div>
     </div>
 
-    <button id="scanBtn" class="scan-button ripple-effect">
-        <span>🔘 START SCAN</span>
-    </button>
-    <footer>animated fingerprint • next result hidden</footer>
-</div>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-database.js";
 
-<script>
-    // ============================================================
-    // FINGERPRINT SIMULATOR WITH HIDDEN NEXT RESULT
-    // Cycle: 3x SUCCESS → FAILED → 3x SUCCESS → NOT FOUND → (repeat)
-    // Next result is NEVER displayed to user — fully hidden
-    // ============================================================
-    
-    // Master sequence (infinite loop)
-    const masterSequence = [
-        "success", "success", "success",
-        "failed",
-        "success", "success", "success",
-        "notfound"
-    ];
-    
-    let currentStepIndex = 0;          // 0-based index
-    let isScanning = false;
-    let timeoutId = null;
-    
-    // DOM Elements
-    const scanBtn = document.getElementById("scanBtn");
-    const statusSpan = document.getElementById("statusLabel");
-    const infoMsgDiv = document.getElementById("infoMsg");
-    const fingerSvg = document.getElementById("fingerSvg");
-    const scanLine = document.getElementById("scanLine");
-    const ringEffect = document.getElementById("ringEffect");
-    
-    // Helper: clear timeouts
-    function abortAnimation() {
-        if (timeoutId) {
-            clearTimeout(timeoutId);
-            timeoutId = null;
+        const firebaseConfig = {
+            apiKey: "AIzaSyBkJS5POxWI4iXudrhLXbCRqafXqVEceSA",
+            authDomain: "biosonic-d86a5.firebaseapp.com",
+            projectId: "biosonic-d86a5",
+            storageBucket: "biosonic-d86a5.firebasestorage.app",
+            messagingSenderId: "457119496438",
+            appId: "1:457119496438:web:dc70c15048cd025b7914d7",
+            databaseURL: "https://biosonic-d86a5-default-rtdb.firebaseio.com/"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const networkStatusRef = ref(db, 'networkStatus');
+
+        // Network Tier Definitions with animations
+        const tierConfig = {
+            "3.5G": { speed: "42 Mbps", latency: "42ms", signal: "████▁▁", color: "#0aff8c", particleSpeed: 1, waveIntensity: 0.3 },
+            "4.5G": { speed: "300 Mbps", latency: "28ms", signal: "█████▁", color: "#2effaa", particleSpeed: 2, waveIntensity: 0.5 },
+            "5.5G Super Fast Network": { speed: "1.2 Gbps", latency: "12ms", signal: "██████", color: "#ffcc44", particleSpeed: 3, waveIntensity: 0.7 },
+            "6.0G Turbo Network": { speed: "3.8 Gbps", latency: "5ms", signal: "██████🔥", color: "#ff8844", particleSpeed: 4, waveIntensity: 0.85 },
+            "6.5G Ultra Turbo Network": { speed: "7.2 Gbps", latency: "2ms", signal: "██████⚡", color: "#ff5533", particleSpeed: 5, waveIntensity: 0.95 },
+            "6.6G Super Sonic Network": { speed: "12 Gbps", latency: "0.8ms", signal: "██████💥", color: "#ff3366", particleSpeed: 6, waveIntensity: 1.0 },
+            "6.7G Hypersonic Network": { speed: "25 Gbps", latency: "0.3ms", signal: "██████🌀", color: "#b266ff", particleSpeed: 7, waveIntensity: 1.2 }
+        };
+
+        let currentTier = "3.5G";
+        let animationFrame;
+        let wavePhase = 0;
+        let particles = [];
+        let canvas, ctx, width, height;
+
+        // DOM Elements
+        const networkNameEl = document.getElementById('networkName');
+        const speedDisplayEl = document.getElementById('speedDisplay');
+        const latencyValueEl = document.getElementById('latencyValue');
+        const bandwidthValueEl = document.getElementById('bandwidthValue');
+        const signalValueEl = document.getElementById('signalValue');
+        const tierBadgeEl = document.getElementById('tierBadge');
+        const timestampEl = document.getElementById('timestamp');
+
+        // Setup Canvas
+        function initCanvas() {
+            canvas = document.getElementById('networkCanvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            initParticles(80);
+            animate();
         }
-    }
-    
-    // remove all glow classes
-    function removeAllGlowClasses() {
-        fingerSvg.classList.remove("glow-success", "glow-failed", "glow-notfound");
-    }
-    
-    function stopScanLine() {
-        scanLine.classList.remove("scan-active");
-    }
-    
-    function startScanLine() {
-        scanLine.classList.add("scan-active");
-    }
-    
-    function triggerRippleRing() {
-        ringEffect.classList.remove("ring-active");
-        void ringEffect.offsetWidth; // force reflow
-        ringEffect.classList.add("ring-active");
-        setTimeout(() => {
-            ringEffect.classList.remove("ring-active");
-        }, 800);
-    }
-    
-    // get current result based on internal step (no UI leak)
-    function getCurrentResult() {
-        return masterSequence[currentStepIndex % masterSequence.length];
-    }
-    
-    // advance state after scan completes (next result hidden)
-    function advanceToNextState() {
-        currentStepIndex++;
-        // next result is NOT displayed anywhere — complete secrecy
-    }
-    
-    // core scan simulation with hidden upcoming result
-    function performScan() {
-        if (isScanning) return;
-        
-        isScanning = true;
-        scanBtn.disabled = true;
-        
-        // reset visual effects
-        abortAnimation();
-        removeAllGlowClasses();
-        stopScanLine();
-        
-        // ---- SCANNING ANIMATION (mobile-like fingerprint read)
-        statusSpan.innerHTML = "🔍 SCANNING...";
-        infoMsgDiv.innerHTML = "📱 analyzing fingerprint pattern • please hold";
-        startScanLine();
-        triggerRippleRing();
-        fingerSvg.style.filter = "drop-shadow(0 0 8px #00ccff)";
-        
-        // simulate scanning delay (1.1 seconds)
-        timeoutId = setTimeout(() => {
-            // scanning finished
-            stopScanLine();
-            fingerSvg.style.filter = "";
+
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            width = canvas.clientWidth;
+            height = canvas.clientHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        function initParticles(count) {
+            particles = [];
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: Math.random() * width,
+                    y: Math.random() * height,
+                    vx: (Math.random() - 0.5) * 2,
+                    vy: (Math.random() - 0.5) * 2,
+                    size: Math.random() * 3 + 1,
+                    alpha: Math.random() * 0.5 + 0.2
+                });
+            }
+        }
+
+        function updateParticles(intensity) {
+            const speed = tierConfig[currentTier]?.particleSpeed || 1;
+            for (let p of particles) {
+                p.x += p.vx * (speed * 0.5);
+                p.y += p.vy * (speed * 0.5);
+                if (p.x < 0) p.x = width;
+                if (p.x > width) p.x = 0;
+                if (p.y < 0) p.y = height;
+                if (p.y > height) p.y = 0;
+            }
+        }
+
+        function drawNetworkAnimation() {
+            if (!ctx || width === 0) return;
+            ctx.clearRect(0, 0, width, height);
             
-            // get result (hidden from pre-knowledge)
-            const result = getCurrentResult();
+            const config = tierConfig[currentTier] || tierConfig["3.5G"];
+            const intensity = config.waveIntensity;
+            const mainColor = config.color;
             
-            let statusMessage = "";
-            let glowClass = "";
-            let infoText = "";
+            // Background glow effect based on intensity
+            ctx.fillStyle = `rgba(0, 0, 0, 0.3)`;
+            ctx.fillRect(0, 0, width, height);
             
-            // assign result messages & animations
-            if (result === "success") {
-                statusMessage = "✅ SUCCESS ✅";
-                glowClass = "glow-success";
-                infoText = "✔️ Fingerprint verified • access granted";
-            } else if (result === "failed") {
-                statusMessage = "❌ FAILED ❌";
-                glowClass = "glow-failed";
-                infoText = "⚠️ Authentication failed • try again";
-            } else if (result === "notfound") {
-                statusMessage = "🔍 NOT FOUND 🔍";
-                glowClass = "glow-notfound";
-                infoText = "❓ Fingerprint not registered in database";
+            // Draw flowing particles (data packets)
+            for (let p of particles) {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size * (0.5 + intensity * 0.8), 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${hexToRgb(mainColor)}, ${p.alpha * (0.3 + intensity)})`;
+                ctx.fill();
             }
             
-            // apply result animation & text
-            fingerSvg.classList.add(glowClass);
-            statusSpan.innerHTML = statusMessage;
-            infoMsgDiv.innerHTML = infoText;
-            triggerRippleRing(); // extra feedback
+            // Draw waveform (network activity)
+            wavePhase += 0.02 * (intensity * 1.5);
+            ctx.beginPath();
+            const step = width / 60;
+            for (let i = 0; i <= 60; i++) {
+                const x = i * step;
+                const amplitude = 40 + (intensity * 60);
+                const y = height / 2 + Math.sin(wavePhase + i * 0.15) * amplitude * (0.5 + intensity * 0.8);
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.strokeStyle = mainColor;
+            ctx.lineWidth = 2 + intensity * 3;
+            ctx.shadowBlur = 10 * intensity;
+            ctx.shadowColor = mainColor;
+            ctx.stroke();
             
-            // advance internal state (next result becomes hidden for future clicks)
-            advanceToNextState();
-            
-            // remove glow effect after animation finishes
-            setTimeout(() => {
-                fingerSvg.classList.remove(glowClass);
-            }, 800);
-            
-            // re-enable button after result settles
-            timeoutId = setTimeout(() => {
-                isScanning = false;
-                scanBtn.disabled = false;
-                // update prompt message for next scan but never reveal next result
-                infoMsgDiv.innerHTML = "✨ Tap START for next fingerprint verification ✨";
-                // optional: reset status to ready but keep last result until next scan?
-                // we keep result visible, but that's intended. No next preview.
-                if (!isScanning) {
-                    // ready but don't show what's next
+            // Draw energy rings for high tiers
+            if (intensity > 0.7) {
+                for (let r = 0; r < 3; r++) {
+                    ctx.beginPath();
+                    const ringSize = 50 + (Date.now() * 0.003 + r * 100) % 100;
+                    ctx.arc(width / 2, height / 2, ringSize * (0.5 + intensity * 0.5), 0, Math.PI * 2);
+                    ctx.strokeStyle = mainColor;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
                 }
-                timeoutId = null;
-            }, 700);
-            
-        }, 1100); // scanning duration
-    }
-    
-    // click handler
-    function onStartClick() {
-        if (isScanning) return;
-        performScan();
-    }
-    
-    // initialize UI — ensure no next result leak
-    function initHiddenMode() {
-        currentStepIndex = 0;   // start from beginning
-        statusSpan.innerHTML = "⚡ READY ⚡";
-        infoMsgDiv.innerHTML = "👆 Tap START • next result will remain hidden";
-        removeAllGlowClasses();
-        stopScanLine();
-        fingerSvg.style.filter = "";
-        isScanning = false;
-        scanBtn.disabled = false;
-        if (timeoutId) clearTimeout(timeoutId);
-        
-        // EXTRA SAFETY: Completely remove any element that could display upcoming result
-        const nextContainer = document.getElementById("nextResultHidden");
-        if (nextContainer) {
-            nextContainer.style.display = "none";
-            nextContainer.style.visibility = "hidden";
-            nextContainer.style.opacity = "0";
-        }
-        // also ensure counter badge is non-existent in visible dom
-        const counterElem = document.querySelector(".counter-badge");
-        if (counterElem) counterElem.style.display = "none";
-        
-        // no console log of next result to keep mystery (optional)
-    }
-    
-    // attach event
-    scanBtn.addEventListener("click", onStartClick);
-    
-    // button press effect
-    scanBtn.addEventListener("mousedown", function() {
-        if (!isScanning) {
-            this.style.transform = "scale(0.97)";
-            setTimeout(() => { if(scanBtn) scanBtn.style.transform = ""; }, 120);
-        }
-    });
-    
-    initHiddenMode();
-    
-    // Additional dynamic: subtle idle animation (but never shows next result)
-    window.addEventListener("load", () => {
-        setInterval(() => {
-            if (!isScanning && document.hasFocus()) {
-                fingerSvg.style.transition = "filter 0.3s";
-                fingerSvg.style.filter = "drop-shadow(0 0 2px rgba(0,180,255,0.5))";
-                setTimeout(() => {
-                    if(!isScanning) fingerSvg.style.filter = "";
-                }, 400);
             }
-        }, 4000);
-    });
-    
-    // Verification of cycle (hidden from UI but follows requirement perfectly):
-    // The sequence:
-    // Click 1 -> success
-    // Click 2 -> success
-    // Click 3 -> success
-    // Click 4 -> failed
-    // Click 5 -> success
-    // Click 6 -> success
-    // Click 7 -> success
-    // Click 8 -> not found
-    // Click 9 -> success (repeat cycle)
-    // 
-    // Next result is NEVER shown anywhere — no counter, no hidden text, no badge.
-    // All elements that could leak 'next' are completely invisible/removed.
-    // The user experiences each scan result as a surprise, just like a real fingerprint sensor.
-    
-    // Additionally, scanning animation includes moving line + expanding ring,
-    // and fingerprint glows with color based on result (green=success, red=failed, amber=notfound).
-    // Design matches mobile fingerprint scanner UI.
-</script>
+            
+            // Draw data streams (lines across screen)
+            if (intensity > 0.5) {
+                for (let i = 0; i < Math.floor(intensity * 8); i++) {
+                    ctx.beginPath();
+                    const startX = (Date.now() * 0.005 * intensity + i * 50) % (width + 100) - 50;
+                    ctx.moveTo(startX, 0);
+                    ctx.lineTo(startX + 30, height);
+                    ctx.strokeStyle = `rgba(${hexToRgb(mainColor)}, 0.2)`;
+                    ctx.stroke();
+                }
+            }
+            
+            ctx.shadowBlur = 0;
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : "10, 255, 140";
+        }
+
+        function updateUI() {
+            const config = tierConfig[currentTier];
+            if (!config) return;
+            
+            networkNameEl.innerHTML = currentTier;
+            speedDisplayEl.innerHTML = `~${config.speed} • ${currentTier.includes("Turbo") ? "TURBO MODE" : currentTier.includes("Sonic") ? "SUPERSONIC" : "ACTIVE"}`;
+            latencyValueEl.innerHTML = config.latency;
+            bandwidthValueEl.innerHTML = config.speed;
+            signalValueEl.innerHTML = config.signal;
+            tierBadgeEl.innerHTML = `⚡ ${currentTier.toUpperCase()} ACTIVE ⚡`;
+            
+            // Update timestamp
+            timestampEl.innerHTML = new Date().toLocaleTimeString();
+            
+            // Add animation effect to dashboard based on intensity
+            const dashboard = document.querySelector('.dashboard');
+            const intensity = config.waveIntensity;
+            dashboard.style.borderColor = `rgba(${hexToRgb(config.color)}, ${0.3 + intensity * 0.5})`;
+            dashboard.style.boxShadow = `0 0 ${20 + intensity * 30}px rgba(${hexToRgb(config.color)}, ${0.2 + intensity * 0.3})`;
+        }
+
+        function animate() {
+            const config = tierConfig[currentTier];
+            if (config) {
+                updateParticles(config.waveIntensity);
+                drawNetworkAnimation();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        // Particle Background
+        function initParticleBackground() {
+            const particleCanvas = document.getElementById('particleCanvas');
+            const pCtx = particleCanvas.getContext('2d');
+            let pWidth, pHeight;
+            let bgParticles = [];
+            
+            function resizeBg() {
+                pWidth = window.innerWidth;
+                pHeight = window.innerHeight;
+                particleCanvas.width = pWidth;
+                particleCanvas.height = pHeight;
+            }
+            
+            function initBgParticles() {
+                bgParticles = [];
+                for (let i = 0; i < 100; i++) {
+                    bgParticles.push({
+                        x: Math.random() * pWidth,
+                        y: Math.random() * pHeight,
+                        radius: Math.random() * 2,
+                        alpha: Math.random() * 0.3
+                    });
+                }
+            }
+            
+            function drawBg() {
+                if (!pCtx) return;
+                pCtx.clearRect(0, 0, pWidth, pHeight);
+                for (let p of bgParticles) {
+                    pCtx.beginPath();
+                    pCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    pCtx.fillStyle = `rgba(10, 255, 140, ${p.alpha * 0.3})`;
+                    pCtx.fill();
+                }
+                requestAnimationFrame(drawBg);
+            }
+            
+            window.addEventListener('resize', () => {
+                resizeBg();
+                initBgParticles();
+            });
+            resizeBg();
+            initBgParticles();
+            drawBg();
+        }
+        
+        // Firebase Listener
+        onValue(networkStatusRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data && data.currentTier) {
+                let newTier = data.currentTier;
+                // Normalize tier name
+                const validTiers = Object.keys(tierConfig);
+                if (!validTiers.includes(newTier)) {
+                    if (newTier.includes("5.5G")) newTier = "5.5G Super Fast Network";
+                    else if (newTier.includes("6.0G")) newTier = "6.0G Turbo Network";
+                    else if (newTier.includes("6.5G")) newTier = "6.5G Ultra Turbo Network";
+                    else if (newTier.includes("6.6G")) newTier = "6.6G Super Sonic Network";
+                    else if (newTier.includes("6.7G")) newTier = "6.7G Hypersonic Network";
+                    else if (newTier.includes("4.5G")) newTier = "4.5G";
+                    else newTier = "3.5G";
+                }
+                if (currentTier !== newTier) {
+                    currentTier = newTier;
+                    updateUI();
+                    
+                    // Add flash effect on tier change
+                    const dashboard = document.querySelector('.dashboard');
+                    dashboard.style.transform = 'scale(1.02)';
+                    setTimeout(() => { dashboard.style.transform = ''; }, 200);
+                }
+            }
+        });
+        
+        // Initialize
+        initCanvas();
+        initParticleBackground();
+        updateUI();
+    </script>
 </body>
 </html>
