@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>NexusCore | Network Velocity Dashboard</title>
+    <title>NexusCore | Network Monitor</title>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
-            user-select: none;
         }
 
         :root {
@@ -22,6 +21,7 @@
             --accent-orange: #ff6a2e;
             --accent-red: #ff3366;
             --accent-purple: #b266ff;
+            --accent-gray: #6c757d;
             --glow-intensity: 0px;
         }
 
@@ -35,9 +35,18 @@
             padding: 1.5rem;
             position: relative;
             overflow-x: hidden;
+            transition: all 0.3s ease;
         }
 
-        /* Particle Canvas Background */
+        body.crashed {
+            background: linear-gradient(135deg, #1a0000 0%, #2a0a0a 50%, #1a0303 100%);
+        }
+
+        body.crashed .dashboard {
+            border-color: #ff3366;
+            box-shadow: 0 0 50px rgba(255, 51, 102, 0.3);
+        }
+
         #particleCanvas {
             position: fixed;
             top: 0;
@@ -49,7 +58,6 @@
             opacity: 0.4;
         }
 
-        /* Main Dashboard */
         .dashboard {
             position: relative;
             z-index: 2;
@@ -64,11 +72,19 @@
             transition: all 0.3s ease;
         }
 
-        /* Header Section */
+        .dashboard.crashed-mode {
+            border-color: #ff3366;
+            background: rgba(30, 10, 10, 0.9);
+        }
+
         .network-header {
             padding: 2rem 2rem 1rem;
             text-align: center;
             border-bottom: 1px solid rgba(10, 255, 140, 0.2);
+        }
+
+        .crashed-mode .network-header {
+            border-bottom-color: rgba(255, 51, 102, 0.3);
         }
 
         .tier-badge {
@@ -83,6 +99,12 @@
             margin-bottom: 1rem;
         }
 
+        .crashed-mode .tier-badge {
+            background: rgba(255, 51, 102, 0.15);
+            color: #ff6680;
+            border-color: rgba(255, 51, 102, 0.4);
+        }
+
         .network-name {
             font-size: 3rem;
             font-weight: 800;
@@ -94,6 +116,13 @@
             margin-bottom: 0.5rem;
         }
 
+        .crashed-mode .network-name {
+            background: linear-gradient(135deg, #ff6666, #ff3366);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+        }
+
         .speed-display {
             font-size: 1.2rem;
             color: #8bc34a;
@@ -101,7 +130,10 @@
             font-weight: 500;
         }
 
-        /* Network Animation Zone */
+        .crashed-mode .speed-display {
+            color: #ff8888;
+        }
+
         .animation-zone {
             padding: 2rem;
             min-height: 400px;
@@ -122,7 +154,10 @@
             margin-bottom: 1.5rem;
         }
 
-        /* Status Cards */
+        .crashed-mode #networkCanvas {
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 51, 102, 0.3);
+        }
+
         .status-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -139,11 +174,19 @@
             backdrop-filter: blur(4px);
         }
 
+        .crashed-mode .status-card {
+            border-color: rgba(255, 51, 102, 0.3);
+        }
+
         .status-label {
             font-size: 0.7rem;
             color: #6c8b74;
             letter-spacing: 1px;
             text-transform: uppercase;
+        }
+
+        .crashed-mode .status-label {
+            color: #aa8888;
         }
 
         .status-value {
@@ -153,7 +196,10 @@
             margin-top: 0.3rem;
         }
 
-        /* Live Indicator */
+        .crashed-mode .status-value {
+            color: #ff8888;
+        }
+
         .live-indicator {
             display: flex;
             align-items: center;
@@ -173,9 +219,20 @@
             animation: pulse 1.2s infinite;
         }
 
+        .crashed-mode .pulse-dot {
+            background: #ff3366;
+            box-shadow: 0 0 10px #ff3366;
+            animation: pulseRed 0.8s infinite;
+        }
+
         @keyframes pulse {
             0%, 100% { opacity: 0.4; transform: scale(0.8); }
             50% { opacity: 1; transform: scale(1.2); }
+        }
+
+        @keyframes pulseRed {
+            0%, 100% { opacity: 0.4; transform: scale(0.8); background: #ff3366; }
+            50% { opacity: 1; transform: scale(1.3); background: #ff6666; }
         }
 
         .timestamp {
@@ -184,13 +241,32 @@
             font-family: monospace;
         }
 
-        /* Footer */
         .footer-note {
             padding: 1rem 2rem;
             text-align: center;
             font-size: 0.65rem;
             color: #3a5a4a;
             border-top: 1px solid rgba(10, 255, 140, 0.1);
+        }
+
+        .crashed-mode .footer-note {
+            color: #aa6666;
+            border-top-color: rgba(255, 51, 102, 0.2);
+        }
+
+        .alert-banner {
+            background: linear-gradient(90deg, #ff3366, #ff6680);
+            color: white;
+            text-align: center;
+            padding: 0.5rem;
+            font-size: 0.8rem;
+            font-weight: bold;
+            animation: alertPulse 0.5s infinite;
+        }
+
+        @keyframes alertPulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
         }
 
         @media (max-width: 600px) {
@@ -200,19 +276,13 @@
             .animation-zone { padding: 1rem; }
             #networkCanvas { height: 200px; }
         }
-
-        /* Network Tier Animations */
-        @keyframes dataStream {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-        }
     </style>
 </head>
 <body>
     <canvas id="particleCanvas"></canvas>
-    <div class="dashboard">
+    <div class="dashboard" id="dashboard">
         <div class="network-header">
-            <div class="tier-badge" id="tierBadge">⚡ ACTIVE NETWORK</div>
+            <div class="tier-badge" id="tierBadge">⚡ NETWORK STATUS</div>
             <div class="network-name" id="networkName">3.5G</div>
             <div class="speed-display" id="speedDisplay">~42 Mbps • STANDARD</div>
         </div>
@@ -235,7 +305,7 @@
             </div>
             <div class="live-indicator">
                 <div class="pulse-dot"></div>
-                <span style="color: #8bc34a;">LIVE SYNC • REAL-TIME NETWORK</span>
+                <span style="color: #8bc34a;" id="liveText">LIVE SYNC • REAL-TIME NETWORK</span>
                 <span class="timestamp" id="timestamp">--:--:--</span>
             </div>
         </div>
@@ -262,24 +332,30 @@
         const db = getDatabase(app);
         const networkStatusRef = ref(db, 'networkStatus');
 
-        // Network Tier Definitions with animations
+        // Complete Network Tier Definitions
         const tierConfig = {
-            "3.5G": { speed: "42 Mbps", latency: "42ms", signal: "████▁▁", color: "#0aff8c", particleSpeed: 1, waveIntensity: 0.3 },
-            "4.5G": { speed: "300 Mbps", latency: "28ms", signal: "█████▁", color: "#2effaa", particleSpeed: 2, waveIntensity: 0.5 },
-            "5.5G Super Fast Network": { speed: "1.2 Gbps", latency: "12ms", signal: "██████", color: "#ffcc44", particleSpeed: 3, waveIntensity: 0.7 },
-            "6.0G Turbo Network": { speed: "3.8 Gbps", latency: "5ms", signal: "██████🔥", color: "#ff8844", particleSpeed: 4, waveIntensity: 0.85 },
-            "6.5G Ultra Turbo Network": { speed: "7.2 Gbps", latency: "2ms", signal: "██████⚡", color: "#ff5533", particleSpeed: 5, waveIntensity: 0.95 },
-            "6.6G Super Sonic Network": { speed: "12 Gbps", latency: "0.8ms", signal: "██████💥", color: "#ff3366", particleSpeed: 6, waveIntensity: 1.0 },
-            "6.7G Hypersonic Network": { speed: "25 Gbps", latency: "0.3ms", signal: "██████🌀", color: "#b266ff", particleSpeed: 7, waveIntensity: 1.2 }
+            "0.5G Lost Network": { speed: "0 Mbps", latency: "∞", signal: "▁▁▁▁▁", color: "#6c757d", particleSpeed: 0.1, waveIntensity: 0.05, status: "disconnected", icon: "💀" },
+            "1.5G Degraded": { speed: "1.5 Mbps", latency: "350ms", signal: "█▁▁▁▁", color: "#8e8e8e", particleSpeed: 0.3, waveIntensity: 0.1, status: "degraded", icon: "⚠️" },
+            "2.5G Edge": { speed: "12 Mbps", latency: "120ms", signal: "██▁▁▁", color: "#b8b8b8", particleSpeed: 0.6, waveIntensity: 0.2, status: "edge", icon: "📶" },
+            "3.5G": { speed: "42 Mbps", latency: "42ms", signal: "████▁▁", color: "#0aff8c", particleSpeed: 1, waveIntensity: 0.3, status: "active", icon: "📡" },
+            "4.5G": { speed: "300 Mbps", latency: "28ms", signal: "█████▁", color: "#2effaa", particleSpeed: 2, waveIntensity: 0.5, status: "active", icon: "⚡" },
+            "5.5G Super Fast": { speed: "1.2 Gbps", latency: "12ms", signal: "██████", color: "#ffcc44", particleSpeed: 3, waveIntensity: 0.7, status: "active", icon: "🚀" },
+            "6.0G Turbo": { speed: "3.8 Gbps", latency: "5ms", signal: "██████🔥", color: "#ff8844", particleSpeed: 4, waveIntensity: 0.85, status: "active", icon: "🔥" },
+            "6.5G Ultra Turbo": { speed: "7.2 Gbps", latency: "2ms", signal: "██████⚡", color: "#ff5533", particleSpeed: 5, waveIntensity: 0.95, status: "active", icon: "🌋" },
+            "6.6G Supersonic": { speed: "12 Gbps", latency: "0.8ms", signal: "██████💥", color: "#ff3366", particleSpeed: 6, waveIntensity: 1.0, status: "active", icon: "💥" },
+            "6.7G Hypersonic": { speed: "25 Gbps", latency: "0.3ms", signal: "██████🌀", color: "#b266ff", particleSpeed: 7, waveIntensity: 1.2, status: "active", icon: "🌀" },
+            "SERVER_CRASHED": { speed: "0 Mbps", latency: "N/A", signal: "💀💀💀", color: "#ff0000", particleSpeed: 0, waveIntensity: 0, status: "crashed", icon: "💀" }
         };
 
         let currentTier = "3.5G";
+        let isCrashed = false;
         let animationFrame;
         let wavePhase = 0;
         let particles = [];
         let canvas, ctx, width, height;
 
         // DOM Elements
+        const dashboard = document.getElementById('dashboard');
         const networkNameEl = document.getElementById('networkName');
         const speedDisplayEl = document.getElementById('speedDisplay');
         const latencyValueEl = document.getElementById('latencyValue');
@@ -287,9 +363,9 @@
         const signalValueEl = document.getElementById('signalValue');
         const tierBadgeEl = document.getElementById('tierBadge');
         const timestampEl = document.getElementById('timestamp');
+        const liveTextEl = document.getElementById('liveText');
 
-        // Setup Canvas
-        function initCanvas() {
+        function setupCanvas() {
             canvas = document.getElementById('networkCanvas');
             ctx = canvas.getContext('2d');
             resizeCanvas();
@@ -321,10 +397,11 @@
         }
 
         function updateParticles(intensity) {
+            if (isCrashed) return;
             const speed = tierConfig[currentTier]?.particleSpeed || 1;
             for (let p of particles) {
-                p.x += p.vx * (speed * 0.5);
-                p.y += p.vy * (speed * 0.5);
+                p.x += p.vx * (speed * 0.3);
+                p.y += p.vy * (speed * 0.3);
                 if (p.x < 0) p.x = width;
                 if (p.x > width) p.x = 0;
                 if (p.y < 0) p.y = height;
@@ -332,19 +409,55 @@
             }
         }
 
+        function drawCrashedAnimation() {
+            if (!ctx || width === 0) return;
+            ctx.clearRect(0, 0, width, height);
+            
+            // Static noise effect
+            for (let i = 0; i < 200; i++) {
+                ctx.fillStyle = `rgba(255, ${Math.random() * 100}, ${Math.random() * 100}, ${Math.random() * 0.5})`;
+                ctx.fillRect(Math.random() * width, Math.random() * height, 2, 2);
+            }
+            
+            // Glitch lines
+            for (let i = 0; i < 20; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, Math.random() * height);
+                ctx.lineTo(width, Math.random() * height);
+                ctx.strokeStyle = `rgba(255, 0, 0, ${Math.random() * 0.5})`;
+                ctx.stroke();
+            }
+            
+            // Error text
+            ctx.font = "bold 20px monospace";
+            ctx.fillStyle = "#ff3366";
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = "#ff0000";
+            ctx.fillText("⚠️ SYSTEM CRASHED ⚠️", width/2 - 100, height/2);
+            ctx.font = "12px monospace";
+            ctx.fillStyle = "#ff8888";
+            ctx.fillText("SERVER UNAVAILABLE", width/2 - 70, height/2 + 40);
+            ctx.shadowBlur = 0;
+        }
+
         function drawNetworkAnimation() {
             if (!ctx || width === 0) return;
+            
+            if (isCrashed) {
+                drawCrashedAnimation();
+                return;
+            }
+            
             ctx.clearRect(0, 0, width, height);
             
             const config = tierConfig[currentTier] || tierConfig["3.5G"];
             const intensity = config.waveIntensity;
             const mainColor = config.color;
             
-            // Background glow effect based on intensity
             ctx.fillStyle = `rgba(0, 0, 0, 0.3)`;
             ctx.fillRect(0, 0, width, height);
             
-            // Draw flowing particles (data packets)
+            // Draw particles (data packets)
             for (let p of particles) {
                 ctx.beginPath();
                 ctx.arc(p.x, p.y, p.size * (0.5 + intensity * 0.8), 0, Math.PI * 2);
@@ -352,7 +465,7 @@
                 ctx.fill();
             }
             
-            // Draw waveform (network activity)
+            // Draw waveform
             wavePhase += 0.02 * (intensity * 1.5);
             ctx.beginPath();
             const step = width / 60;
@@ -369,8 +482,8 @@
             ctx.shadowColor = mainColor;
             ctx.stroke();
             
-            // Draw energy rings for high tiers
-            if (intensity > 0.7) {
+            // Energy rings for high tiers
+            if (intensity > 0.7 && !isCrashed) {
                 for (let r = 0; r < 3; r++) {
                     ctx.beginPath();
                     const ringSize = 50 + (Date.now() * 0.003 + r * 100) % 100;
@@ -381,8 +494,8 @@
                 }
             }
             
-            // Draw data streams (lines across screen)
-            if (intensity > 0.5) {
+            // Data streams
+            if (intensity > 0.5 && !isCrashed) {
                 for (let i = 0; i < Math.floor(intensity * 8); i++) {
                     ctx.beginPath();
                     const startX = (Date.now() * 0.005 * intensity + i * 50) % (width + 100) - 50;
@@ -402,36 +515,71 @@
         }
 
         function updateUI() {
+            if (isCrashed) {
+                networkNameEl.innerHTML = "💀 SERVER CRASHED 💀";
+                speedDisplayEl.innerHTML = "SYSTEM FAILURE • NO CONNECTION";
+                latencyValueEl.innerHTML = "N/A";
+                bandwidthValueEl.innerHTML = "0 Mbps";
+                signalValueEl.innerHTML = "💀💀💀";
+                tierBadgeEl.innerHTML = "⚠️ CRITICAL FAILURE ⚠️";
+                liveTextEl.innerHTML = "🔴 SERVER OFFLINE • EMERGENCY MODE";
+                dashboard.classList.add('crashed-mode');
+                document.body.classList.add('crashed');
+                return;
+            }
+            
+            dashboard.classList.remove('crashed-mode');
+            document.body.classList.remove('crashed');
+            
             const config = tierConfig[currentTier];
             if (!config) return;
             
-            networkNameEl.innerHTML = currentTier;
-            speedDisplayEl.innerHTML = `~${config.speed} • ${currentTier.includes("Turbo") ? "TURBO MODE" : currentTier.includes("Sonic") ? "SUPERSONIC" : "ACTIVE"}`;
+            const icon = config.icon || "📡";
+            networkNameEl.innerHTML = `${icon} ${currentTier} ${icon}`;
+            speedDisplayEl.innerHTML = `~${config.speed} • ${config.status === "degraded" ? "DEGRADED MODE" : config.status === "edge" ? "EDGE NETWORK" : "ACTIVE"}`;
             latencyValueEl.innerHTML = config.latency;
             bandwidthValueEl.innerHTML = config.speed;
             signalValueEl.innerHTML = config.signal;
-            tierBadgeEl.innerHTML = `⚡ ${currentTier.toUpperCase()} ACTIVE ⚡`;
             
-            // Update timestamp
+            let badgeText = "";
+            if (currentTier.includes("Lost")) badgeText = "💀 NETWORK LOST 💀";
+            else if (currentTier.includes("Degraded")) badgeText = "⚠️ DEGRADED SIGNAL ⚠️";
+            else if (currentTier.includes("Edge")) badgeText = "📶 EDGE NETWORK 📶";
+            else badgeText = `⚡ ${currentTier.toUpperCase()} ACTIVE ⚡`;
+            tierBadgeEl.innerHTML = badgeText;
+            
+            liveTextEl.innerHTML = config.status === "degraded" ? "⚠️ DEGRADED PERFORMANCE" : 
+                                   config.status === "edge" ? "📶 EDGE CONNECTIVITY" : 
+                                   "🟢 LIVE SYNC • REAL-TIME NETWORK";
+            
+            // Update dashboard styling based on status
+            const dashboardEl = document.querySelector('.dashboard');
+            if (config.status === "degraded") {
+                dashboardEl.style.borderColor = `rgba(255, 200, 100, 0.5)`;
+            } else if (config.status === "edge") {
+                dashboardEl.style.borderColor = `rgba(200, 200, 200, 0.5)`;
+            } else {
+                dashboardEl.style.borderColor = `rgba(10, 255, 140, 0.3)`;
+            }
+            
             timestampEl.innerHTML = new Date().toLocaleTimeString();
-            
-            // Add animation effect to dashboard based on intensity
-            const dashboard = document.querySelector('.dashboard');
-            const intensity = config.waveIntensity;
-            dashboard.style.borderColor = `rgba(${hexToRgb(config.color)}, ${0.3 + intensity * 0.5})`;
-            dashboard.style.boxShadow = `0 0 ${20 + intensity * 30}px rgba(${hexToRgb(config.color)}, ${0.2 + intensity * 0.3})`;
         }
 
         function animate() {
-            const config = tierConfig[currentTier];
-            if (config) {
-                updateParticles(config.waveIntensity);
-                drawNetworkAnimation();
+            if (!isCrashed) {
+                const config = tierConfig[currentTier];
+                if (config && !isCrashed) {
+                    updateParticles(config.waveIntensity);
+                    drawNetworkAnimation();
+                } else {
+                    drawCrashedAnimation();
+                }
+            } else {
+                drawCrashedAnimation();
             }
             requestAnimationFrame(animate);
         }
 
-        // Particle Background
         function initParticleBackground() {
             const particleCanvas = document.getElementById('particleCanvas');
             const pCtx = particleCanvas.getContext('2d');
@@ -481,33 +629,44 @@
         // Firebase Listener
         onValue(networkStatusRef, (snapshot) => {
             const data = snapshot.val();
-            if (data && data.currentTier) {
-                let newTier = data.currentTier;
-                // Normalize tier name
-                const validTiers = Object.keys(tierConfig);
-                if (!validTiers.includes(newTier)) {
-                    if (newTier.includes("5.5G")) newTier = "5.5G Super Fast Network";
-                    else if (newTier.includes("6.0G")) newTier = "6.0G Turbo Network";
-                    else if (newTier.includes("6.5G")) newTier = "6.5G Ultra Turbo Network";
-                    else if (newTier.includes("6.6G")) newTier = "6.6G Super Sonic Network";
-                    else if (newTier.includes("6.7G")) newTier = "6.7G Hypersonic Network";
-                    else if (newTier.includes("4.5G")) newTier = "4.5G";
-                    else newTier = "3.5G";
-                }
-                if (currentTier !== newTier) {
-                    currentTier = newTier;
+            if (data) {
+                if (data.serverCrashed === true || data.currentTier === "SERVER_CRASHED") {
+                    isCrashed = true;
                     updateUI();
+                } else {
+                    isCrashed = false;
+                    let newTier = data.currentTier || "3.5G";
                     
-                    // Add flash effect on tier change
-                    const dashboard = document.querySelector('.dashboard');
-                    dashboard.style.transform = 'scale(1.02)';
-                    setTimeout(() => { dashboard.style.transform = ''; }, 200);
+                    // Normalize tier names
+                    const validTiers = Object.keys(tierConfig);
+                    if (!validTiers.includes(newTier)) {
+                        if (newTier.includes("5.5G")) newTier = "5.5G Super Fast";
+                        else if (newTier.includes("6.0G")) newTier = "6.0G Turbo";
+                        else if (newTier.includes("6.5G")) newTier = "6.5G Ultra Turbo";
+                        else if (newTier.includes("6.6G")) newTier = "6.6G Supersonic";
+                        else if (newTier.includes("6.7G")) newTier = "6.7G Hypersonic";
+                        else if (newTier.includes("4.5G")) newTier = "4.5G";
+                        else if (newTier.includes("0.5G") || newTier.includes("Lost")) newTier = "0.5G Lost Network";
+                        else if (newTier.includes("1.5G") || newTier.includes("Degraded")) newTier = "1.5G Degraded";
+                        else if (newTier.includes("2.5G") || newTier.includes("Edge")) newTier = "2.5G Edge";
+                        else newTier = "3.5G";
+                    }
+                    
+                    if (currentTier !== newTier) {
+                        currentTier = newTier;
+                        updateUI();
+                        
+                        const dashboardEl = document.querySelector('.dashboard');
+                        dashboardEl.style.transform = 'scale(1.02)';
+                        setTimeout(() => { dashboardEl.style.transform = ''; }, 200);
+                    }
                 }
+                updateUI();
             }
         });
         
         // Initialize
-        initCanvas();
+        setupCanvas();
         initParticleBackground();
         updateUI();
     </script>
